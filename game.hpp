@@ -6,11 +6,14 @@ namespace game {
     class Character {
         public:
             float pos;
-            bool isAlive;
     
             void move(float a) {
                 this->pos += a;
                 return;
             }
     };
+}
+
+bool toggle(bool s) {
+    return !s;
 }

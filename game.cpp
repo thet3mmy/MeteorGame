@@ -4,11 +4,12 @@
 #include <string>
 #include <random>
 #include <sstream>
+#include <math.h>
 
-#define FPS_MAX 60
+#define FPS_MAX 30
 #define CHARACTER_SIZE 35
 #define MOVE_AMOUNT 7
-#define METEOR_SPEED 10
+#define FONT_NAME "Arial.ttf"
 
 game::Character character;
 game::Character meteor;
@@ -22,7 +23,10 @@ sf::RenderWindow window(sf::VideoMode(640, 640), title.c_str());
 sf::Font font;
 
 bool collision_fix = false; // idk why it works but it does
+bool paused = false;
+bool lose = false;
 
+int METEOR_SPEED = 7;
 float meteor_x = -1;
 unsigned int game_score = 0;
 
@@ -31,6 +35,8 @@ void keyboard() {
         character.move(-MOVE_AMOUNT);
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
         character.move(MOVE_AMOUNT);
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+        paused = toggle(paused);
     }
 }
 
@@ -53,16 +59,6 @@ void update_pos() {
     meteor_shape.setPosition(meteor_x, meteor.pos);
 }
 
-void collisions() {
-    if(character_shape.getGlobalBounds().intersects(meteor_shape.getGlobalBounds())) {
-        if(collision_fix == false) {
-            collision_fix = true;
-        } else if (collision_fix == true) {
-            window.close();
-        }
-    }
-}
-
 void update_title() {
     std::stringstream sstr;
     sstr << "Score: " << game_score;
@@ -71,7 +67,7 @@ void update_title() {
     window.setTitle(title);
 }
 
-void render_score_text() {
+void render_text() {
     sf::Text text;
     text.setFont(font);
     text.setString(title);
@@ -80,6 +76,29 @@ void render_score_text() {
     text.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
     window.draw(text);
+}
+
+void show_lose_text() {
+    sf::Text stext;
+    stext.setFont(font);
+    stext.setString("You lose");
+    stext.setCharacterSize(48);
+    stext.setFillColor(sf::Color::Magenta);
+    stext.setStyle(sf::Text::Bold | sf::Text::Underlined);
+    stext.setPosition(window.getSize().x / 3, window.getSize().y / 2);
+
+    window.draw(stext);
+    lose = true;
+}
+
+void collisions() {
+    if(character_shape.getGlobalBounds().intersects(meteor_shape.getGlobalBounds())) {
+        if(collision_fix == false) {
+            collision_fix = true;
+        } else if (collision_fix == true) {
+            show_lose_text();
+        }
+    }
 }
 
 int main()
@@ -91,7 +110,7 @@ int main()
     meteor_shape.setFillColor(sf::Color::Red);
 
     window.setFramerateLimit(FPS_MAX);
-    font.loadFromFile("Arial.ttf");
+    font.loadFromFile(FONT_NAME);
 
     while (window.isOpen())
     {
@@ -104,17 +123,19 @@ int main()
                 keyboard();
         }
 
-        window.clear();
+        if(!paused && !lose) {
+            window.clear();
 
-        meteor_logic();
-        update_title();
-        collisions();
-        update_pos();
-        render_score_text();
+            meteor_logic();
+            update_title();
+            collisions();
+            update_pos();
+            render_text();
 
-        window.draw(character_shape);
-        window.draw(meteor_shape);
-        window.display();
+            window.draw(character_shape);
+            window.draw(meteor_shape);
+            window.display();
+        }
     }
 
     return 0;
